@@ -5,13 +5,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-/* ===== Supabase ===== */
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-/* ===== メッセージ取得 ===== */
+/* メッセージ取得 */
 app.get("/api/messages", async (req, res) => {
   const { data, error } = await supabase
     .from("messages")
@@ -26,14 +25,13 @@ app.get("/api/messages", async (req, res) => {
   res.json(data);
 });
 
-/* ===== メッセージ投稿 ===== */
+/* メッセージ投稿 */
 app.post("/api/messages", async (req, res) => {
   const { text, user } = req.body;
   if (!text || !user) {
     return res.status(400).json({ error: "invalid" });
   }
 
-  // BANチェック
   const { data: banned } = await supabase
     .from("bans")
     .select("*")
@@ -55,7 +53,7 @@ app.post("/api/messages", async (req, res) => {
   res.sendStatus(200);
 });
 
-/* ===== 管理人：削除 ===== */
+/* 管理人：削除 */
 app.delete("/api/messages/:id", async (req, res) => {
   const id = Number(req.params.id);
 
@@ -72,7 +70,7 @@ app.delete("/api/messages/:id", async (req, res) => {
   res.sendStatus(200);
 });
 
-/* ===== 管理人：BAN ===== */
+/* 管理人：BAN */
 app.post("/api/ban", async (req, res) => {
   const { user } = req.body;
   if (!user) {
@@ -91,7 +89,7 @@ app.post("/api/ban", async (req, res) => {
   res.sendStatus(200);
 });
 
-/* ===== ポート（Render対応） ===== */
+/* Render対応ポート */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log("Server started on port " + PORT);
