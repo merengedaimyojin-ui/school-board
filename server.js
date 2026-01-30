@@ -18,20 +18,28 @@ app.get("/api/messages", async (req, res) => {
     .select("*")
     .order("id", { ascending: true });
 
-  if (error) return res.status(500).json(error);
+  if (error) {
+    console.error(error);
+    return res.status(500).json(error);
+  }
+
   res.json(data);
 });
 
 /* ===== メッセージ投稿 ===== */
 app.post("/api/messages", async (req, res) => {
   const { text, user } = req.body;
+  if (!text || !user) {
+    return res.status(400).json({ error: "invalid" });
+  }
 
+  // BANチェック
   const { data: banned } = await supabase
     .from("bans")
     .select("*")
     .eq("user", user);
 
-  if (banned.length > 0) {
+  if (banned && banned.length > 0) {
     return res.status(403).json({ error: "banned" });
   }
 
@@ -39,7 +47,11 @@ app.post("/api/messages", async (req, res) => {
     .from("messages")
     .insert([{ text, user }]);
 
-  if (error) return res.status(500).json(error);
+  if (error) {
+    console.error(error);
+    return res.status(500).json(error);
+  }
+
   res.sendStatus(200);
 });
 
@@ -52,24 +64,35 @@ app.delete("/api/messages/:id", async (req, res) => {
     .delete()
     .eq("id", id);
 
-  if (error) return res.status(500).json(error);
+  if (error) {
+    console.error(error);
+    return res.status(500).json(error);
+  }
+
   res.sendStatus(200);
 });
 
 /* ===== 管理人：BAN ===== */
 app.post("/api/ban", async (req, res) => {
   const { user } = req.body;
+  if (!user) {
+    return res.status(400).json({ error: "invalid" });
+  }
 
   const { error } = await supabase
     .from("bans")
     .insert([{ user }]);
 
-  if (error) return res.status(500).json(error);
+  if (error) {
+    console.error(error);
+    return res.status(500).json(error);
+  }
+
   res.sendStatus(200);
 });
 
-/* ===== ポート ===== */
+/* ===== ポート（Render対応） ===== */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("Server started on port " + PORT);
 });
