@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>管理人ページ</title>
+</head>
+<body>
+
+<h2>管理人ページ</h2>
+
+<div id="login">
+  <input id="adminPass" type="password" placeholder="管理パスワード">
+  <button onclick="login()">ログイン</button>
+</div>
+
+<div id="admin" style="display:none;">
+  <h3>メッセージ管理</h3>
+  <ul id="logs"></ul>
+
+  <h3>通報一覧</h3>
+  <ul id="reports"></ul>
+</div>
+
+<script>
+  const ADMIN_PASS = "admin2026";
+
+  function login() {
+    if (document.getElementById("adminPass").value === ADMIN_PASS) {
+      localStorage.setItem("admin", "yes");
+      showAdmin();
+    } else {
+      alert("パスワードが違います");
+    }
+  }
+
+  function showAdmin() {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("admin").style.display = "block";
+    loadLogs();
+    loadReports();
+  }
+
+  if (localStorage.getItem("admin") === "yes") showAdmin();
+
+  async function loadLogs() {
+    const res = await fetch("/api/messages");
+    const data = await res.json();
+    const ul = document.getElementById("logs");
+    ul.innerHTML = "";
+
+    data.forEach(m => {
+      const li = document.createElement("li");
+      li.textContent = `[${m.user}] ${m.text} `;
+
+      const del = document.createElement("button");
+      del.textContent = "削除";
+      del.onclick = () => deletePost(m.id);
+
+      const ban = document.createElement("button");
+      ban.textContent = "BAN";
+      ban.onclick = () => banUser(m.user);
+
+      li.appendChild(del);
+      li.appendChild(ban);
+      ul.appendChild(li);
+    });
+  }
+
+  async function deletePost(id) {
+    if (!confirm("本当に削除しますか？")) return;
+    await fetch("/api/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+    loadLogs();
+  }
+
+  async function banUser(user) {
+    if (!confirm(`${user} をBANしますか？`)) return;
+    await fetch("/api/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user })
+    });
+    alert("BANしました");
+  }
+
+  async function loadReports() {
+    const res = await fetch("/api/reports");
+    const data = await res.json();
+    const ul = document.getElementById("reports");
+    ul.innerHTML = "";
+
+    data.forEach(r => {
+      const li = document.createElement("li");
+      li.textContent =
+        `[${r.time}] ${r.user} / ${r.text} / 理由:${r.reason}`;
+      ul.appendChild(li);
+    });
+  }
+</script>
+
+</body>
+</html>

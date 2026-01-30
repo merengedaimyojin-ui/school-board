@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>学校掲示板</title>
+</head>
+<body>
+
+<h2>学校掲示板</h2>
+
+<div id="invite">
+  <p>招待コードを入力してください</p>
+  <input id="code" type="text">
+  <button onclick="checkCode()">入室</button>
+</div>
+
+<div id="chat" style="display:none;">
+  <ul id="log"></ul>
+  <input id="message" placeholder="メッセージ">
+  <button onclick="send()">送信</button>
+</div>
+
+<script>
+  const INVITE_CODE = "school2026";
+
+  function checkCode() {
+    const input = document.getElementById("code").value;
+    if (input === INVITE_CODE) {
+      localStorage.setItem("invited", "yes");
+      startChat();
+    } else {
+      alert("招待コードが違います");
+    }
+  }
+
+  function startChat() {
+    document.getElementById("invite").style.display = "none";
+    document.getElementById("chat").style.display = "block";
+    load();
+  }
+
+  // 匿名ID
+  let userId = localStorage.getItem("userId");
+  if (!userId) {
+    userId = "匿名" + Math.floor(Math.random() * 10000);
+    localStorage.setItem("userId", userId);
+  }
+
+  if (localStorage.getItem("invited") === "yes") {
+    startChat();
+  }
+
+  async function load() {
+    const res = await fetch("/api/messages");
+    const messages = await res.json();
+    const log = document.getElementById("log");
+    log.innerHTML = "";
+
+    messages.forEach(m => {
+      const li = document.createElement("li");
+      li.textContent = `[${m.user}] ${m.time}：${m.text} `;
+
+      const btn = document.createElement("button");
+      btn.textContent = "通報";
+      btn.onclick = () => report(m);
+
+      li.appendChild(btn);
+      log.appendChild(li);
+    });
+  }
+
+ async function send() {
+  const input = document.getElementById("message");
+  if (!input.value) return;
+
+  const res = await fetch("/api/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text: input.value,
+      user: userId
+    })
+  });
+
+  if (res.status === 403) {
+    alert("あなたはBANされています");
+    return;
+  }
+
+  input.value = "";
+  load();
+  }
+
+  async function report(m) {
+    const reason = prompt("通報理由を入力してください");
+    if (!reason) return;
+
+    await fetch("/api/report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user: m.user,
+        text: m.text,
+        reason: reason
+      })
+    });
+
+    alert("通報しました");
+  }
+</script>
+
+</body>
+</html>
