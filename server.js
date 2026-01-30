@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
-/* ===== Supabase 接続 ===== */
+/* ===== Supabase ===== */
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
@@ -26,7 +26,6 @@ app.get("/api/messages", async (req, res) => {
 app.post("/api/messages", async (req, res) => {
   const { text, user } = req.body;
 
-  // BANチェック
   const { data: banned } = await supabase
     .from("bans")
     .select("*")
@@ -36,9 +35,9 @@ app.post("/api/messages", async (req, res) => {
     return res.status(403).json({ error: "banned" });
   }
 
-  const { error } = await supabase.from("messages").insert([
-    { text, user }
-  ]);
+  const { error } = await supabase
+    .from("messages")
+    .insert([{ text, user }]);
 
   if (error) return res.status(500).json(error);
   res.sendStatus(200);
