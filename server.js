@@ -73,6 +73,10 @@ app.get("/api/reports", (req, res) => {
   res.json(JSON.parse(fs.readFileSync(REPORT_FILE)));
 });
 
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server started");
+});
   console.log("http://localhost:3000 で起動しました");
 });
+
